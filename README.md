@@ -1,4 +1,4 @@
-# app-api-video-frame-pro-upload
+# lambda-video-frame-pro-upload
 
 Este repositório implementa o endpoint de **upload** de vídeos. Os vídeos são enviados pelo usuário para o **API Gateway**, que os armazena no **S3**.
 
