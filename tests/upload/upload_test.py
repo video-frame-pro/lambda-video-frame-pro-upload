@@ -9,7 +9,7 @@ os.environ["BUCKET_NAME"] = "mocked-bucket"
 
 from src.upload.upload import (
     lambda_handler,
-    validate_video_link,
+    validate_video_url,
     download_video,
     upload_video_to_s3,
     validate_request,
@@ -20,7 +20,7 @@ from src.upload.upload import (
 class TestLambdaFunction(TestCase):
 
     @patch("src.upload.upload.urllib.request.urlopen")
-    def test_validate_video_link_success(self, mock_urlopen):
+    def test_validate_video_url_success(self, mock_urlopen):
         """Teste de sucesso para validação do link do vídeo."""
         mock_response = MagicMock()
         mock_response.status = 200
@@ -28,12 +28,12 @@ class TestLambdaFunction(TestCase):
         mock_urlopen.return_value = mock_response
 
         try:
-            validate_video_link("http://valid-url.com/video.mp4")
+            validate_video_url("http://valid-url.com/video.mp4")
         except Exception as e:
-            self.fail(f"validate_video_link raised an exception unexpectedly: {e}")
+            self.fail(f"validate_video_url raised an exception unexpectedly: {e}")
 
     @patch("src.upload.upload.urllib.request.urlopen")
-    def test_validate_video_link_invalid_content_type(self, mock_urlopen):
+    def test_validate_video_url_invalid_content_type(self, mock_urlopen):
         """Teste para erro de tipo de conteúdo inválido."""
         mock_response = MagicMock()
         mock_response.status = 200
@@ -41,12 +41,12 @@ class TestLambdaFunction(TestCase):
         mock_urlopen.return_value = mock_response
 
         with self.assertRaises(ValueError) as context:
-            validate_video_link("http://valid-url.com/file.pdf")
+            validate_video_url("http://valid-url.com/file.pdf")
 
         self.assertIn("Invalid content type", str(context.exception))
 
     @patch("src.upload.upload.urllib.request.urlopen")
-    def test_validate_video_link_file_too_large(self, mock_urlopen):
+    def test_validate_video_url_file_too_large(self, mock_urlopen):
         """Teste para erro de arquivo maior que o limite permitido."""
         mock_response = MagicMock()
         mock_response.status = 200
@@ -54,12 +54,12 @@ class TestLambdaFunction(TestCase):
         mock_urlopen.return_value = mock_response
 
         with self.assertRaises(ValueError) as context:
-            validate_video_link("http://valid-url.com/largefile.mp4")
+            validate_video_url("http://valid-url.com/largefile.mp4")
 
         self.assertIn("The file size exceeds", str(context.exception))
 
     @patch("src.upload.upload.urllib.request.urlopen")
-    def test_validate_video_link_http_403(self, mock_urlopen):
+    def test_validate_video_url_http_403(self, mock_urlopen):
         """Teste para erro HTTP 403 durante a validação do link do vídeo."""
         mock_urlopen.side_effect = urllib.error.HTTPError(
             url="http://restricted-url.com",
@@ -70,7 +70,7 @@ class TestLambdaFunction(TestCase):
         )
 
         with self.assertRaises(ValueError) as context:
-            validate_video_link("http://restricted-url.com")
+            validate_video_url("http://restricted-url.com")
 
         self.assertIn("Failed to validate the video link: HTTP Error 403", str(context.exception))
 
@@ -112,8 +112,8 @@ class TestLambdaFunction(TestCase):
 
     @patch("src.upload.upload.upload_video_to_s3")
     @patch("src.upload.upload.download_video")
-    @patch("src.upload.upload.validate_video_link")
-    def test_lambda_handler_success(self, mock_validate_video_link, mock_download_video, mock_upload_video_to_s3):
+    @patch("src.upload.upload.validate_video_url")
+    def test_lambda_handler_success(self, mock_validate_video_url, mock_download_video, mock_upload_video_to_s3):
         """Teste de sucesso para o fluxo completo da Lambda."""
         event = {
             "body": json.dumps({
@@ -125,7 +125,7 @@ class TestLambdaFunction(TestCase):
         }
         context = {}
 
-        mock_validate_video_link.return_value = True
+        mock_validate_video_url.return_value = True
         mock_download_video.return_value = b"video content"
         mock_upload_video_to_s3.return_value = "videos/testuser/123/upload/123-source.mp4"
 
@@ -227,11 +227,11 @@ class TestLambdaFunction(TestCase):
         self.assertIn("Missing required fields: video_url, email", str(context.exception))
 
     ## ----------------------------- ##
-    ## Testes para validate_video_link() ##
+    ## Testes para validate_video_url() ##
     ## ----------------------------- ##
 
     @patch("src.upload.upload.urllib.request.urlopen")
-    def test_validate_video_link_http_error(self, mock_urlopen):
+    def test_validate_video_url_http_error(self, mock_urlopen):
         """Teste para erro HTTP durante a validação do link do vídeo."""
         mock_urlopen.side_effect = urllib.error.HTTPError(
             url="http://restricted-url.com",
@@ -242,17 +242,17 @@ class TestLambdaFunction(TestCase):
         )
 
         with self.assertRaises(ValueError) as context:
-            validate_video_link("http://restricted-url.com")
+            validate_video_url("http://restricted-url.com")
 
         self.assertIn("Failed to validate the video link: HTTP Error 403", str(context.exception))
 
     @patch("src.upload.upload.urllib.request.urlopen")
-    def test_validate_video_link_unexpected_error(self, mock_urlopen):
+    def test_validate_video_url_unexpected_error(self, mock_urlopen):
         """Teste para erro inesperado durante a validação do link."""
         mock_urlopen.side_effect = Exception("Unexpected error")
 
         with self.assertRaises(ValueError) as context:
-            validate_video_link("http://error-url.com")
+            validate_video_url("http://error-url.com")
 
         self.assertIn("Unexpected error during video link validation", str(context.exception))
 
@@ -297,8 +297,8 @@ class TestLambdaFunction(TestCase):
 
     @patch("src.upload.upload.upload_video_to_s3")
     @patch("src.upload.upload.download_video")
-    @patch("src.upload.upload.validate_video_link")
-    def test_lambda_handler_unexpected_error(self, mock_validate_video_link, mock_download_video, mock_upload_video_to_s3):
+    @patch("src.upload.upload.validate_video_url")
+    def test_lambda_handler_unexpected_error(self, mock_validate_video_url, mock_download_video, mock_upload_video_to_s3):
         """Teste para erro inesperado na lambda_handler."""
         event = {
             "body": json.dumps({
@@ -310,7 +310,7 @@ class TestLambdaFunction(TestCase):
         }
         context = {}
 
-        mock_validate_video_link.return_value = True
+        mock_validate_video_url.return_value = True
         mock_download_video.return_value = b"video content"
         mock_upload_video_to_s3.side_effect = Exception("Unexpected error")
 

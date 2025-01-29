@@ -48,7 +48,7 @@ def validate_request(body):
     if missing_fields:
         raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
 
-def validate_video_link(video_url):
+def validate_video_url(video_url):
     """
     Valida o link do vídeo verificando sua acessibilidade, tamanho e tipo de conteúdo.
     """
@@ -142,15 +142,15 @@ def lambda_handler(event, context):
         user_name = body["user_name"]
         email = body["email"]
         video_id = body["video_id"]
-        video_link = body["video_url"]
+        video_url = body["video_url"]
 
         logger.info(f"Processing video upload for user: {user_name}, video_id: {video_id}")
 
         # Valida o link do vídeo
-        validate_video_link(video_link)
+        validate_video_url(video_url)
 
         # Faz o download do vídeo
-        video_content = download_video(video_link)
+        video_content = download_video(video_url)
 
         # Faz o upload do vídeo para o S3
         video_key = upload_video_to_s3(video_content, user_name, video_id)
@@ -162,7 +162,7 @@ def lambda_handler(event, context):
                 "user_name": user_name,
                 "email": email,
                 "video_id": video_id,
-                "video_url": video_link
+                "video_url": video_url
             }
         )
     except ValueError as ve:
