@@ -6,7 +6,7 @@ aws_region = "us-east-1" # Região AWS onde os recursos serão provisionados
 
 ######### PROJECT INFOS ################################################
 lambda_name     = "upload" # Nome da função Lambda principal
-lambda_handler  = "send.lambda_handler" # Handler da função Lambda principal
+lambda_handler  = "upload.lambda_handler" # Handler da função Lambda principal
 lambda_zip_path = "../lambda/upload/upload.zip" # Caminho para o ZIP da função Lambda
 lambda_runtime  = "python3.12" # Runtime da função Lambda principal
 
